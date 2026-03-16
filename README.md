@@ -10,6 +10,7 @@ A Swift library for fetching metadata, video download URLs, and transcripts from
 - 📝 **Transcripts** — fetch and parse WebVTT captions into timestamped segments
 - 🌍 **Multi-language captions** — request specific languages with automatic fallback
 - 🖼️ **Thumbnails** — multiple sizes sorted by resolution
+- 🔐 **Password-protected videos** — pass the password and access course/private content
 - 🔒 **No API key required** — uses public OAuth client credentials
 - 🍎 **Cross-platform** — macOS, iOS, tvOS, watchOS
 - ⚡ **Async/await** native — built for modern Swift concurrency
@@ -126,6 +127,24 @@ let video = try await VimeoMetadata.fetch("https://vimeo.com/123456789", fetchTr
 // video.transcript will be empty, but metadata and variants are populated
 ```
 
+### Password-Protected Videos
+
+Some Vimeo videos (e.g., online courses, private content) require a password set by the uploader. Pass it via the `password` parameter:
+
+```swift
+let video = try await VimeoMetadata.fetch(
+    "https://vimeo.com/68375962",
+    password: "coursepw123"
+)
+print(video.title)
+
+if let url = video.bestDownloadUrl {
+    print("Download: \(url)")
+}
+```
+
+If no password is provided for a protected video, `passwordRequired` is thrown. If the password is wrong, `wrongPassword` is thrown.
+
 ### URL Formats
 
 All common Vimeo URL formats are supported:
@@ -149,7 +168,10 @@ do {
 } catch VimeoMetadataError.videoNotFound {
     print("Video doesn't exist or is private")
 } catch VimeoMetadataError.passwordRequired {
-    print("Video requires a password")
+    print("Video requires a password — retry with password parameter")
+    let video = try await VimeoMetadata.fetch(url, password: "secret")
+} catch VimeoMetadataError.wrongPassword {
+    print("Incorrect password")
 } catch VimeoMetadataError.rateLimited {
     print("Too many requests — try again later")
 } catch {
@@ -246,7 +268,7 @@ For subsequent requests, only steps 2–4 are needed (token is cached).
 
 ## Limitations
 
-- **Password-protected videos** — Not supported. The `passwordRequired` error is thrown.
+- **Password-protected videos** — Supported. Pass the password via the `password` parameter. If no password is provided for a protected video, the `passwordRequired` error is thrown. If the password is wrong, `wrongPassword` is thrown.
 - **Private/embed-only videos** — Not accessible without user authentication.
 - **Rate limiting** — Vimeo may rate-limit requests. The OAuth token helps, but excessive requests will still be throttled.
 - **API stability** — Uses Vimeo's official API with client credentials from their macOS app. More stable than scraping, but client credentials may be rotated.
