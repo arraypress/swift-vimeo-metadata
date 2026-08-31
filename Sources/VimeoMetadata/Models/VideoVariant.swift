@@ -42,10 +42,5 @@ public struct VideoVariant: Codable, Equatable, Sendable {
     
     /// The MIME type (e.g., `"video/mp4"`).
     public let mimeType: String?
-    
-    /// The typed download URL.
-    public var downloadUrl: URL? {
-        URL(string: url)
-    }
-    
+
 }
